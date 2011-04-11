@@ -12,7 +12,7 @@
 {- 
  This file contains an ArBB D.A.Accelerate backend that uses 
  ArBB in an "immediate mode". Small ArBB functions are generated and executed 
- interleaved with xImm_ calls for various tasks. 
+ interleaved with xImm_ calls for various tasks.  
 -}
 
 

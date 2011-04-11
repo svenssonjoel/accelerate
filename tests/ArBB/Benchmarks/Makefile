@@ -4,14 +4,15 @@
 
 # INCLUDES= -i.. -itests/ArBB/Benchmarks -iaccelerate-examples/src/common -Iinclude
 
-INCLUDES= -i../../../../ -i../../../ -i. -i../../../accelerate-examples/src -I../../../include
+INCLUDES= -i../../../ -i. -i../../../accelerate-examples/src -I../../../include
+#INCLUDES= -i../../../../ -i../../../ -i. -i../../../accelerate-examples/src -I../../../include
 #INCLUDES= -i../../../../ -i../../../ -i. -i../../../accelerate-examples/src/common -I../../../include
 #INCLUDES= -i../../../../ -i../../../ -i.  -I../../../include
 LIBS= -ltbb -larbb_dev
 #LIBS= -ltbb -larbb
 
 all:
-	ghc --make $(INCLUDES) Main.hs $(LIBS) -O3 -rtsopts
+	ghc --make $(INCLUDES) Main.hs $(LIBS) -O2 -rtsopts
 #	ghc --make $(INCLUDES) tests/ArBB/Benchmarks/Main.hs $(LIBS)
 
 c:
