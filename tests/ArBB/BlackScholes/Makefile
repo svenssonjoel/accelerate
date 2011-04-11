@@ -6,10 +6,9 @@
 
 #INCLUDES= -i../../../../ -i../../../ -i. -i../../../accelerate-examples/src/common -I../../../include \
           -i../../../dist/build/autogen
-ARBBVMD="../../../../"
 ACCELERATED="../../../"
 
-INCLUDES= -i$(ARBBVMD) -i$(ACCELERATED) -i. -i$(ACCELERATED)/accelerate-examples/src \
+INCLUDES= -i$(ACCELERATED) -i. -i$(ACCELERATED)/accelerate-examples/src \
           -I$(ACCELERATED)include \
           -i$(ACCELERATED)dist/build/autogen
 
