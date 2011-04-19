@@ -128,9 +128,10 @@ executeArBB acc@(OpenAcc pacc) aenv = do
       
       -- TODO: Fold is right now Cheating and not applying the 
       --       "base" element
-      Fold x y a  -> do -- error "Fold: Not yet implemented"
+      Fold _ y a  -> do -- error "Fold: Not yet implemented"
         a0 <- executeArBB a aenv
-        fold1Op (OpenAcc (Fold1 x a)) aenv a0  -- Major cheat 
+        foldOp acc aenv y a0    -- trying for slightly less of a cheat.
+        --fold1Op (OpenAcc (Fold1 x a)) aenv a0  -- Major cheat 
      
       Fold1 _ a -> do 
         a0 <- executeArBB a aenv 
@@ -277,6 +278,22 @@ zipWithOp acc@(OpenAcc (ZipWith f inp0 inp1))
     d = dim sh0
     (ad,_) = AD.runArrayData $ (,undefined) `fmap` AD.newArrayData (1024 `max` n)
      
+
+------------------------------------------------------------------------------
+-- FoldOp 
+
+foldOp ::  forall sh e aenv env. (Sugar.Shape sh, Typeable aenv)
+        => OpenAcc aenv (Array sh e)
+        -> Val aenv
+        -> OpenExp env aenv e 
+        -> Array (sh:.Int) e
+        -> ExecState (Array sh e)
+foldOp acc@(OpenAcc (Fold f@(Lam (Lam (Body (PrimApp op _)))) x inp)) -- POSSIBLY SIMPLY CASE
+       aenv
+       e -- default value 
+       arr@(Array sh in0)  = fold1Op  (OpenAcc (Fold1 f inp)) aenv arr         
+           
+
 
 ------------------------------------------------------------------------------
 -- Fold1Op 
