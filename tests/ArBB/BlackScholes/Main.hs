@@ -83,7 +83,8 @@ run n w = withSystemRandom $ \gen -> do
      na_psy <- evaluate$ Acc.fromIArray n_psy
 
 -- RRN: Wait, how does running the interpreter help the ArBB backend?
-     -- r <-  evaluate$ Interp.run (blackscholesAcc na_psy)
+-- BJS: it doesn't ( This was probably left in some a somewhat "broken" state
+     -- r <-  evaluate$ ArBB.run (blackscholesAcc na_psy)
      -- putStrLn$ "warmed up ArBB " ++ show (head (toList r)) 
 
      r <- evaluate$ CUDA.run (blackscholesAcc na_psy) 

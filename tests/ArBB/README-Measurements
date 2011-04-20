@@ -1,0 +1,80 @@
+
+
+
+
+A few runs of Black-Scholes 
+------------------------------------------------------------------------------
+Date: April-20-2011
+CPU:  Core I7 930 @ 2.80Ghz ("bloomfield" ,Nahalem) 
+GPU:  GIGABYTE GTX480 
+
+------------------------------------------------------------------------------
+
+command: ./Main 1000000 y
+Standard optimization level (o2)
+
+#1 
+Time ArBB (hacked): 0.243945s
+Time ArBB : 0.347881s
+Time CUDA : 1.532247s
+
+#2
+Time ArBB (hacked): 0.086504s
+Time ArBB : 0.347542s
+Time CUDA : 1.514946s
+
+#3
+Time ArBB (hacked): 0.086475s
+Time ArBB : 0.345572s
+Time CUDA : 1.515087s
+
+#4
+Time ArBB (hacked): 0.08989s
+Time ArBB : 0.349507s
+Time CUDA : 1.512212s
+
+#5
+Time ArBB (hacked): 0.090048s
+Time ArBB : 0.346248s
+Time CUDA : 1.531401s
+
+It looks like the Hacked version (hack that removes the 8 time duplication 
+of code) is fast! (In the running-time area that is more what we expected 
+from this benchmark) 
+
+
+------------------------------------------------------------------------------
+
+command: ARBB_OPT_LEVEL=o3 ARBB_NUM_CORES=4 ./Main 1000000 y
+
+#1
+Time ArBB (hacked): 0.08733s
+Time ArBB : 0.353767s
+Time CUDA : 1.526343s
+
+#2
+Time ArBB (hacked): 0.082021s
+Time ArBB : 0.330243s
+Time CUDA : 1.51049s
+
+#3
+Time ArBB (hacked): 0.08222s
+Time ArBB : 0.330799s
+Time CUDA : 1.532244s
+
+#4
+Time ArBB (hacked): 0.082221s
+Time ArBB : 0.345048s
+Time CUDA : 1.534133s
+
+#5
+Time ArBB (hacked): 0.081256s
+Time ArBB : 0.351395s
+Time CUDA : 1.527076s
+
+#6
+Time ArBB (hacked): 0.074403s
+Time ArBB : 0.330965s
+Time CUDA : 1.544758s
+
+------------------------------------------------------------------------------
