@@ -80,10 +80,7 @@ collect :: Arrays a
         =>  a
         -> ExecState a
 collect a = do 
-        --t1 <- liftIO$ getCurrentTime 
         res <- collectR arrays a
-        --t2 <- liftIO$ getCurrentTime 
-        --liftIO$ putStrLn$ "collect takes: " ++ show (diffUTCTime t2 t1)
         return res
   where 
     collectR :: ArraysR a -> a -> ExecState a   
@@ -131,8 +128,7 @@ executeArBB acc@(OpenAcc pacc) aenv = do
       Fold _ y a  -> do -- error "Fold: Not yet implemented"
         a0 <- executeArBB a aenv
         foldOp acc aenv y a0    -- trying for slightly less of a cheat.
-        --fold1Op (OpenAcc (Fold1 x a)) aenv a0  -- Major cheat 
-     
+    
       Fold1 _ a -> do 
         a0 <- executeArBB a aenv 
         fold1Op acc aenv a0 
@@ -156,13 +152,9 @@ useOp inp@(Array sh ad)  | dim sh <= 3 = do
   case res of 
        Just v -> return  inp -- This can happen if Let is used 
        Nothing -> do
-          -- liftIO$ putStrLn "Creating new ArBB Array" 
-          -- liftIO$ putStrLn (show d)
           copyIn ad d -- allocates on Arbb Side 
-          -- liftIO$ putStrLn "Creating new ArBB Array DONE" 
           return$ inp -- Array (sh) ad
         where
-           --n = size sh
            d = shapeToList sh
 useOp _ = error "Use: ArBB back-end does not support arrays of dimension higher than 3"
       
@@ -291,7 +283,8 @@ foldOp ::  forall sh e aenv env. (Sugar.Shape sh, Typeable aenv)
 foldOp acc@(OpenAcc (Fold f@(Lam (Lam (Body (PrimApp op _)))) x inp)) -- POSSIBLY SIMPLY CASE
        aenv
        e -- default value 
-       arr@(Array sh in0)  = fold1Op  (OpenAcc (Fold1 f inp)) aenv arr         
+       arr@(Array sh in0)  = fold1Op  (OpenAcc (Fold1 f inp)) aenv arr  
+       -- TODO: Apply the default value at some point! 
            
 
 
