@@ -36,7 +36,7 @@ Author:                 Manuel M T Chakravarty,
                         Trevor L. McDonell
 Maintainer:             Manuel M T Chakravarty <chak@cse.unsw.edu.au>
 Homepage:               http://www.cse.unsw.edu.au/~chak/project/accelerate/
-Bug-reports:            http://trac.haskell.org/accelerate
+Bug-reports:            https://github.com/mchakravarty/accelerate/issues
 
 Category:               Compilers/Interpreters, Concurrency, Data
 Stability:              Experimental
@@ -243,6 +243,6 @@ Library
                         TypeOperators, TypeSynonymInstances, UnboxedTuples
 
 source-repository head
-  type:                 darcs
-  location:             http://code.haskell.org/accelerate
+  type:                 git
+  location:             https://github.com/mchakravarty/accelerate
 
