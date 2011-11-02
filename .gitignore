@@ -1,0 +1,4 @@
+/.ghci
+/dist/
+/accelerate-examples/dist
+/accelerate-buildbot/dist
