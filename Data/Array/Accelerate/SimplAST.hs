@@ -11,18 +11,74 @@ module Data.Array.Accelerate.SimpAST () where
   -- The idea of this module is to get rid of alll the fancy type
   -- trickery, and turn it into a pretty dumb AST, that could be parsed
   -- via recursive decent. You shouldn't need all the fancy types, as
-  -- we know the complex AST type checks. The goal is to simpify the
+  -- we know the complex AST type checks. The goal is to simplify the
   -- backend creation by compiling away all that type information.
 
   -- A simple representation of variables
+  -- Honestly though, since we're trying to convert from de Brujin
+  -- indicies to this... it might just as well use the indicies. 
   --
   data Var = Var String
 
   -- A simple environment
+  -- {Var -> Expression}
   type Env = Map Var AccExp
 
+  -- Arrays and Shapes
+  --
+  -- So it looks like, while the array is very abstract, the EltRep sh
+  -- (the dimension) is pretty much always going to be what amount to a
+  -- list of ints. Of course, they create their own data structure which
+  -- amounts to a list of ints... I think I'll just use a list of ints.
+  -- I suppose I could use their structure, but I don't see a reason to
+  -- yet, other than one less thing I'll have to implement. However, if
+  -- I do, I think I'll have to deal with a ton of crazy type class
+  -- stuff. I'm also ignoring the fact that it's much more abstract than
+  -- that, but I honestly don't see what all that abstraction buys us.
+  --
+  -- The problem is the ArrayData and ArrayElt have type class
+  -- methods, and numerous instances, and I can't imagine they're all
+  -- useless. But, I can't quite understand everything in Array.Data
+  -- yet.
+  --
+  -- The Shape type class also has some methods that I'm ignoring.
+  --
+  -- However, the real problem here is the array's need to be passed out
+  -- to foreign code and back into Haskell. The Data module handles all
+  -- of this... so it would be best to reuse it.
+  dimx :: Int -> [Int]
+  dimx 0 = []
+  dimx x = [1 .. x]
+
+  type Dimension = [Int]
+  type DIM0 = []
+  type DIM1 = dimx 1
+  type DIM2 = dimx 2
+  type DIM3 = dimx 3
+  type DIM4 = dimx 4
+  type DIM5 = dimx 5
+  type DIM6 = dimx 6
+  type DIM7 = dimx 7
+
+  type Scalar e = Array DIM0 e
+  type Vector e = Array DIM1 e
+  type Segments = Vector Int
+
+  data Array e = Array [Int]
   
+  -- A simpler, but not quite simple, AST. Necessary I think, as they
+  -- make (too) heavy use of type classes and other type ninjary.
+  data AccExp where
+    Let :: (Arrays array, Arrays body) => Var -> array -> body -> AccExp
+      -- Let binds an array to some var in a body
+      -- Let var array body
+    Let :: (Arrays array1, Arrays array2, Arrays Body) =>
+      (Var, Var) -> (array1, array2) -> body -> AccExp
+    PairArrays :: 
+
+
   -- A simple AST
+  -- I wish I could make it this simple, but I fear not.
   data AccExp = 
       Int
       -- The element types. Only Int for now, but the others would be
