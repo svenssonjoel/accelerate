@@ -32,7 +32,7 @@ import Data.Array.Accelerate.CUDA.Array.Table
 
 -- library
 import Data.Tuple
-import Data.Record.Label
+import Data.Label
 import Control.Concurrent.MVar
 import Control.Monad
 import Control.Monad.State.Strict                       (StateT(..))
@@ -94,7 +94,7 @@ evalCUDA acc = modifyMVar onta (liftM swap . runStateT acc)
     onta = unsafePerformIO
          $ do s <- initialise
               r <- newMVar s
-              addMVarFinalizer r $ CUDA.destroy (getL deviceContext s)
+              addMVarFinalizer r $ CUDA.destroy (get deviceContext s)
               return r
 
 
