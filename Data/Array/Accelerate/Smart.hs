@@ -1486,8 +1486,8 @@ _showSharingAccOp (LetSharing _ acc) = "LET " ++ _showSharingAccOp acc
 _showSharingAccOp (AccSharing _ acc) = showPreAccOp acc
 
 
--- |Smart constructors to construct representation AST forms
--- ---------------------------------------------------------
+-- Smart constructors to construct representation AST forms
+-- --------------------------------------------------------
 
 mkIndex :: forall slix e aenv. (Slice slix, Elt e)
         => AST.OpenAcc                aenv (Array (FullShape slix) e)
@@ -1508,8 +1508,8 @@ mkReplicate e arr
     slix = undefined :: slix
 
 
--- |Smart constructors for stencil reification
--- -------------------------------------------
+-- Smart constructors for stencil reification
+-- ------------------------------------------
 
 -- Stencil reification
 --
