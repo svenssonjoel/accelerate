@@ -1,6 +1,12 @@
 module Data.Array.Accelerate.SimpAST () where
 
-  import qualified Data.Map as Map
+  import qualified Data.Map as Map -- importing Map for an environment
+  
+  -- I'd like to use their array, dimension/shape,
+  -- slicing/index representations, and element, but it might make the
+  -- whole AST more complex.
+  import Data.Array.Accelerate.Array.Representation
+  import Data.Array.Accelerate.Array.Sugar
     
   -- The idea of this module is to get rid of alll the fancy type
   -- trickery, and turn it into a pretty dumb AST, that could be parsed
