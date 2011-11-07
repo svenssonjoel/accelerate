@@ -71,15 +71,12 @@ Flag internal-checks
 Library
   Include-Dirs:         include
   Build-depends:        array           == 0.3.*,
-                        base            == 4.*,
+                        base            >= 4.*,
                         containers      >= 0.3 && < 0.5,
                         directory       >= 1.0 && < 1.2,
                         ghc-prim        == 0.2.*,
-                        mtl             == 2.0.*,
-                        pretty          == 1.0.*
-
-  if flag(llvm)
-    Build-depends:      llvm            >= 0.6.8
+                        mtl             >= 2.0.*,
+                        pretty          >= 1.0 && < 1.2
 
 --  if flag(test-suite)
 --    Build-depends:      QuickCheck      == 2.*
@@ -103,9 +100,6 @@ Library
                         Data.Array.Accelerate.Tuple
                         Data.Array.Accelerate.Type
 
---  If flag(llvm)
---    Exposed-modules:    Data.Array.Accelerate.LLVM
-
 --  If flag(test-suite)
 --    Exposed-modules:    Data.Array.Accelerate.Test
 --    Other-modules:      Data.Array.Accelerate.Test.QuickCheck
@@ -122,10 +116,6 @@ Library
   if flag(more-pp)
     Other-modules:      Data.Array.Accelerate.Pretty.HTML
                         Data.Array.Accelerate.Pretty.Graphviz
-
-
---  If flag(llvm)
---    Other-modules:      Data.Array.Accelerate.LLVM.CodeGen
 
   if flag(bounds-checks)
     cpp-options:        -DACCELERATE_BOUNDS_CHECKS
