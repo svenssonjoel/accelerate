@@ -28,7 +28,7 @@ newArray :: (Shape sh, Elt e) => sh -> (sh -> e) -> CIO (Array sh e)
 newArray sh f =
   let arr = Sugar.newArray sh f
   in do
-      useArray arr
+      useArray arr Nothing
       return arr
 
 

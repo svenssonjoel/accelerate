@@ -154,7 +154,7 @@ prepareAcc rootAcc = do
         -- Array injection
         --
         Use arr@(Array _ _) -> do
-          useArray arr
+          useArray arr Nothing
           return $ node (Use arr)
 
         -- Computation nodes

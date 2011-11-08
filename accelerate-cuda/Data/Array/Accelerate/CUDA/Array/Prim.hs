@@ -30,8 +30,8 @@ import Foreign.Ptr
 import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Stream                       ( Stream )
 import qualified Foreign.CUDA.Driver                    as CUDA
-import qualified Foreign.CUDA.Driver.Stream             as CUDA
 import qualified Foreign.CUDA.Driver.Texture            as CUDA
 
 -- friends
@@ -170,8 +170,9 @@ useArray
     => MemoryTable
     -> ArrayData e
     -> Int
+    -> Maybe Stream
     -> IO ()
-useArray mt ad n =
+useArray mt ad n mst =
   let arr = primArrayData ad
       src = CUDA.HostPtr (ptrsOfArrayData ad)
   in do
@@ -181,7 +182,7 @@ useArray mt ad n =
         case e of
           ExitCode OutOfMemory -> reclaim mt >> CUDA.mallocArray n
           _                    -> throwIO e
-      CUDA.pokeArrayAsync n src dst Nothing
+      CUDA.pokeArrayAsync n src dst mst
       insert mt arr dst
 
 
@@ -233,7 +234,7 @@ peekArrayAsync
     => MemoryTable
     -> ArrayData e
     -> Int
-    -> Maybe CUDA.Stream
+    -> Maybe Stream
     -> IO ()
 peekArrayAsync mt ad n st =
   unsafeLookup mt ad >>= \src ->
@@ -257,7 +258,7 @@ pokeArrayAsync
     => MemoryTable
     -> ArrayData e
     -> Int
-    -> Maybe CUDA.Stream
+    -> Maybe Stream
     -> IO ()
 pokeArrayAsync mt ad n st =
   unsafeLookup mt ad >>= \dst ->
