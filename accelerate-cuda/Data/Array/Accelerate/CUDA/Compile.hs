@@ -435,7 +435,7 @@ memo mvar fun = do
 -- table. This may entail waiting for the external compilation process to
 -- complete. If successfully, the temporary files are removed.
 --
-link :: KernelTable -> AccKey -> IO CUDA.Module
+link :: KernelTable -> KernelKey -> IO CUDA.Module
 link table key =
   let intErr = INTERNAL_ERROR(error) "link" "missing kernel entry"
   in do
@@ -465,7 +465,7 @@ link table key =
 
 -- Generate and compile code for a single open array expression
 --
-compile :: KernelTable -> AccKey -> OpenAcc aenv a -> [AccBinding aenv] -> CIO ()
+compile :: KernelTable -> KernelKey -> OpenAcc aenv a -> [AccBinding aenv] -> CIO ()
 compile table key acc fvar = do
   dir     <- outputDir
   nvcc    <- fromMaybe (error "nvcc: command not found") <$> liftIO (findExecutable "nvcc")
