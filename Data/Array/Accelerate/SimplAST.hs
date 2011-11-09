@@ -69,12 +69,31 @@ module Data.Array.Accelerate.SimpAST () where
   -- A simpler, but not quite simple, AST. Necessary I think, as they
   -- make (too) heavy use of type classes and other type ninjary.
   data AccExp where
-    Let :: (Arrays array, Arrays body) => Var -> array -> body -> AccExp
+    ArrayExp :: (Shape sh, Elt e) =>
+      (Array sh e) -> AccExp
+      -- Lifts the Array into the AST
+    ArraysExp :: (Arrays arrays) =>
+      (Arrays arrays) -> AccExp
+      -- Lifts the Arrays into the AST. I'm still not how this differs
+      -- from the Array
+    EltExp :: Elt e => 
+      e -> AccExp
+      -- Lift an element into the AST.
+    ShapeExp :: Shape sh =>
+      sh -> AccExp
+      -- Lift a shape into the AST. If we have this and element, why do
+      -- we need ArrayExp? or Arrays?
+    Let :: Var -> AccExp -> AccExp -> AccExp
       -- Let binds an array to some var in a body
       -- Let var array body
-    Let :: (Arrays array1, Arrays array2, Arrays Body) =>
-      (Var, Var) -> (array1, array2) -> body -> AccExp
-    PairArrays :: 
+    Let :: (Var, Var) -> AccExp -> AccExp -> AccExp
+    PairArrays :: AccExp -> AccExp -> AccExp
+    Lam :: Var -> AccExp -> AccExp
+    Apply :: AccExp -> AccExp -> AccExp
+    If :: Bool -> AccExp -> AccExp -> AccExp
+    Use :: AccExp -> AccExp
+    Unit :: AccExp -> AccExp
+    Reshape :: AccExp -> AccExp -> AccExp
 
 
   -- A simple AST
