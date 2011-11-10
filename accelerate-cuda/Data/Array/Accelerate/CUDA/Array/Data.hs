@@ -95,17 +95,17 @@ mallocArray (Array sh adata) = doMalloc =<< gets memoryTable
 
 -- |Upload an existing array to the device
 --
-useArray :: (Shape dim, Elt e) => Array dim e -> Maybe CUDA.Stream -> CIO ()
-useArray (Array sh adata) mst = doUse =<< gets memoryTable
+useArray :: (Shape dim, Elt e) => Array dim e -> CIO ()
+useArray (Array sh adata) = doUse =<< gets memoryTable
   where
     doUse mt = liftIO $ useR arrayElt adata
       where
         useR :: ArrayEltR e -> ArrayData e -> IO ()
         useR ArrayEltRunit             _  = return ()
         useR (ArrayEltRpair aeR1 aeR2) ad = useR aeR1 (fst ad) >> useR aeR2 (snd ad)
-        useR aer                       ad = usePrim aer mt ad (size sh) mst
+        useR aer                       ad = usePrim aer mt ad (size sh)
 
-        usePrim :: ArrayEltR e -> MemoryTable -> ArrayData e -> Int -> Maybe CUDA.Stream -> IO ()
+        usePrim :: ArrayEltR e -> MemoryTable -> ArrayData e -> Int -> IO ()
         mkPrimDispatch(usePrim,Prim.useArray)
 
 

@@ -73,7 +73,7 @@ executeAcc acc = executeOpenAcc acc Empty
 --
 executeAfun1 :: (Arrays a, Arrays b) => ExecAfun (a -> b) -> a -> CIO b
 executeAfun1 (Alam (Abody f)) arrs = do
-  applyArraysR (\arr -> useArray arr Nothing) arrays arrs
+  applyArraysR useArray arrays arrs
   executeOpenAcc f (Empty `Push` arrs)
 
 executeAfun1 _ _                   =
