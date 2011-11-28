@@ -95,8 +95,15 @@ data instance GArrayData ba Char    = AD_Char    (ba Char)
 data instance GArrayData ba (a, b)  = AD_Pair (GArrayData ba a)
                                               (GArrayData ba b)
 
+mkAccTyCon :: String -> TyCon
+#if MIN_VERSION_base(4,4,0)
+mkAccTyCon   = mkTyCon3 "accelerate" "Data.Array.Accelerate.Array.Data"
+#else
+mkAccTyCon t = mkTyCon ("Data.Array.Accelerate.Array.Data." ++ t)
+#endif
+
 instance (Typeable1 ba, Typeable e) => Typeable (GArrayData ba e) where
-  typeOf _ = mkTyCon "Data.Array.Accelerate.Array.Data.GArrayData"
+  typeOf _ = mkAccTyCon "GArrayData"
             `mkTyConApp` [typeOf (undefined::ba e), typeOf (undefined::e)]
 
 
