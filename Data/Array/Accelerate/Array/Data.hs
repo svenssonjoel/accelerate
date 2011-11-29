@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, TypeFamilies, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE CPP, GADTs, TypeFamilies, FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE RankNTypes, MagicHash, UnboxedTuples, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 {-# OPTIONS_HADDOCK hide #-}
