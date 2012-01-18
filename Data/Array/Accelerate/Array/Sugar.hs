@@ -661,8 +661,9 @@ type Scalar e = Array DIM0 e
 type Vector e = Array DIM1 e
 
 -- |Segment descriptor
+-- TODO: We really want to constrain this to be of scalar, integral type.
 --
-type Segments = Vector Int
+type Segments i = Vector i
 
 -- Shorthand for common shape types
 --
