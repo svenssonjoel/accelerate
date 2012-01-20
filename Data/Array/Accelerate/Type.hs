@@ -48,9 +48,9 @@ import Foreign.C.Types (
 
 mkTupleTyCon :: String -> TyCon
 #if MIN_VERSION_base(4,4,0)
-mkTupleTyCon   = mkTyCon3 "" ""
+mkTupleTyCon = mkTyCon3 "" ""
 #else
-mkTupleTyCon t = mkTyCon
+mkTupleTyCon = mkTyCon
 #endif
 
 
