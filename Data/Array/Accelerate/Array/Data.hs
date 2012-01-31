@@ -63,7 +63,7 @@ type MutableArrayData s e = GArrayData (STUArray s Int) e
 -- Array representation in dependence on the element type, but abstracting
 -- over the basic array type (in particular, abstracting over mutability)
 --
-data family GArrayData ba e
+data family GArrayData (ba :: * -> *) e
 data instance GArrayData ba ()      = AD_Unit
 data instance GArrayData ba Int     = AD_Int     (ba Int)
 data instance GArrayData ba Int8    = AD_Int8    (ba Int8)
