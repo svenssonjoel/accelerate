@@ -108,10 +108,14 @@ data Layout env env' where
 
 -- Project the nth index out of an environment layout.
 --
-prjIdx :: Typeable t => Int -> Layout env env' -> Idx env t
-prjIdx 0 (PushLayout _ ix) = case gcast ix of
-                               Just ix' -> ix'
-                               Nothing  -> INTERNAL_ERROR(error) "prjIdx" "type mismatch"
+prjIdx :: forall env env' t. Typeable t => Int -> Layout env env' -> Idx env t
+prjIdx 0 (PushLayout _ (ix :: Idx env u)) = case gcast ix of
+    Just ix' -> ix'
+    Nothing  -> INTERNAL_ERROR(error) "prjIdx" $ unlines
+      [ "type mismatch"
+      , "couldn't match expected type `" ++ shows (typeOf (undefined :: t))
+                  "' with actual type `" ++ shows (typeOf (undefined :: u)) "'" ]
+
 prjIdx n (PushLayout l _)  = prjIdx (n - 1) l
 prjIdx _ EmptyLayout       = INTERNAL_ERROR(error) "prjIdx" "inconsistent valuation"
 
