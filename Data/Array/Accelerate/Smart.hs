@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP, GADTs, TypeOperators, TypeFamilies, ScopedTypeVariables, RankNTypes #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 {-# LANGUAGE DeriveDataTypeable, StandaloneDeriving, PatternGuards #-}
+{-# OPTIONS_HADDOCK hide #-}
 -- |
 -- Module      : Data.Array.Accelerate.Smart
 -- Copyright   : [2008..2011] Manuel M T Chakravarty, Gabriele Keller, Sean Lee
@@ -229,16 +230,16 @@ data PreAcc acc exp as where
               => (Exp e -> Exp e -> exp e)
               -> acc (Array (sh:.Int) e)
               -> PreAcc acc exp (Array sh e)
-  FoldSeg     :: (Shape sh, Elt e)
+  FoldSeg     :: (Shape sh, Elt e, Elt i, IsIntegral i)
               => (Exp e -> Exp e -> exp e)
               -> exp e
               -> acc (Array (sh:.Int) e)
-              -> acc Segments
+              -> acc (Segments i)
               -> PreAcc acc exp (Array (sh:.Int) e)
-  Fold1Seg    :: (Shape sh, Elt e)
+  Fold1Seg    :: (Shape sh, Elt e, Elt i, IsIntegral i)
               => (Exp e -> Exp e -> exp e)
               -> acc (Array (sh:.Int) e)
-              -> acc Segments
+              -> acc (Segments i)
               -> PreAcc acc exp (Array (sh:.Int) e)
   Scanl       :: Elt e
               => (Exp e -> Exp e -> exp e)
@@ -512,8 +513,8 @@ data PreExp acc exp t where
               => acc (Array sh t) -> exp sh     -> PreExp acc exp t
   Shape       :: (Shape sh, Elt e)              
               => acc (Array sh e)               -> PreExp acc exp sh
-  Size        :: (Shape sh, Elt e)              
-              => acc (Array sh e)               -> PreExp acc exp Int
+  ShapeSize   :: Shape sh              
+              => exp sh                         -> PreExp acc exp Int
 
 -- |Scalar expressions for plain array computations.
 --
@@ -572,7 +573,7 @@ convertSharingExp lyt alyt env aenv = cvt
           PrimApp p e     -> AST.PrimApp p (cvt e)
           IndexScalar a e -> AST.IndexScalar (convertSharingAcc alyt aenv a) (cvt e)
           Shape a         -> AST.Shape (convertSharingAcc alyt aenv a)
-          Size a          -> AST.Size (convertSharingAcc alyt aenv a)
+          ShapeSize e     -> AST.ShapeSize (cvt e)
  
 -- |Convert a tuple expression
 --
@@ -1224,7 +1225,7 @@ makeOccMap rootAcc
             PrimApp p e     -> reconstruct $ travE1 (PrimApp p) e
             IndexScalar a e -> reconstruct $ travAE IndexScalar a e
             Shape a         -> reconstruct $ travA Shape a
-            Size a          -> reconstruct $ travA Size a
+            ShapeSize e     -> reconstruct $ travE1 ShapeSize e
           }
       where
         travE1 :: Typeable b => (SharingExp b -> PreExp SharingAcc SharingExp a) -> Exp b 
@@ -1661,7 +1662,7 @@ determineScopes floatOutAcc accOccMap rootAcc
           PrimApp p e     -> travE1 (PrimApp p) e
           IndexScalar a e -> travAE IndexScalar a e
           Shape a         -> travA Shape a
-          Size a          -> travA Size a
+          ShapeSize e     -> travE1 ShapeSize e
       where
         travTup :: Tuple.Tuple SharingExp tup -> (Tuple.Tuple SharingExp tup, NodeCounts)
         travTup NilTup          = (NilTup, noNodeCounts)
@@ -1904,7 +1905,7 @@ instance Elt a => Show (Exp a) where
             IndexScalar a e -> ExpSharing undefined $ IndexScalar (fst $ recoverSharingAcc False a)
                                                                   (toSharingExp e)
             Shape a         -> ExpSharing undefined $ Shape (fst $ recoverSharingAcc False a)
-            Size a          -> ExpSharing undefined $ Size (fst $ recoverSharingAcc False a)
+            ShapeSize e     -> ExpSharing undefined $ ShapeSize (toSharingExp e)
 
       toSharingTup :: Tuple.Tuple Exp tup -> Tuple.Tuple SharingExp tup
       toSharingTup NilTup          = NilTup
@@ -1969,10 +1970,10 @@ showPreExpOp (PrimConst _)     = "PrimConst"
 showPreExpOp (PrimApp _ _)     = "PrimApp"
 showPreExpOp (IndexScalar _ _) = "IndexScalar"
 showPreExpOp (Shape _)         = "Shape"
-showPreExpOp (Size _)          = "Size"
+showPreExpOp (ShapeSize _)     = "ShapeSize"
 
--- |Smart constructors to construct representation AST forms
--- ---------------------------------------------------------
+-- Smart constructors to construct representation AST forms
+-- --------------------------------------------------------
 
 mkIndex :: forall slix e aenv. (Slice slix, Elt e)
         => AST.OpenAcc                aenv (Array (FullShape slix) e)
@@ -1993,8 +1994,8 @@ mkReplicate e arr
     slix = undefined :: slix
 
 
--- |Smart constructors for stencil reification
--- -------------------------------------------
+-- Smart constructors for stencil reification
+-- ------------------------------------------
 
 -- Stencil reification
 --

@@ -1,6 +1,7 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE TypeOperators, GADTs, TypeFamilies, FlexibleContexts, FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables, DeriveDataTypeable, StandaloneDeriving, TupleSections #-}
+{-# LANGUAGE CPP, DeriveDataTypeable, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE GADTs, ScopedTypeVariables, StandaloneDeriving, TupleSections #-}
+{-# LANGUAGE TypeOperators, TypeFamilies, BangPatterns #-}
+{-# OPTIONS_HADDOCK hide #-}
 -- |
 -- Module      : Data.Array.Accelerate.Array.Sugar
 -- Copyright   : [2008..2011] Manuel M T Chakravarty, Gabriele Keller, Sean Lee, Trevor L. McDonell
@@ -18,7 +19,7 @@ module Data.Array.Accelerate.Array.Sugar (
 
   -- * Class of supported surface element types and their mapping to representation types
   Elt(..), EltRepr, EltRepr',
-  
+
   -- * Derived functions
   liftToElt, liftToElt2, sinkFromElt, sinkFromElt2,
 
@@ -27,9 +28,12 @@ module Data.Array.Accelerate.Array.Sugar (
 
   -- * Array indexing and slicing
   Z(..), (:.)(..), All(..), Any(..), Shape(..), Slice(..),
-  
+
   -- * Array shape query, indexing, and conversions
   shape, (!), newArray, allocateArray, fromIArray, toIArray, fromList, toList,
+
+  -- * Miscellaneous
+  showShape,
 
 ) where
 
@@ -44,12 +48,11 @@ import Data.Array.Accelerate.Array.Data
 import qualified Data.Array.Accelerate.Array.Representation as Repr
 
 
--- |Surface types representing array indices and slices
--- ----------------------------------------------------
+-- Surface types representing array indices and slices
+-- ---------------------------------------------------
 
--- |Array indices are snoc type lists
---
--- For example, the type of a rank-2 array index is 'Z :.Int :. Int'.
+-- |Array indices are snoc type lists.
+-- For example, the type of a rank-2 array index is @Z :.Int :. Int@.
 
 -- |Rank-0 index
 --
@@ -64,7 +67,7 @@ data tail :. head = tail :. head
 
 -- |Marker for entire dimensions in slice descriptors
 --
-data All = All 
+data All = All
   deriving (Typeable, Show)
 
 -- |Marker for arbitrary shapes in slice descriptors
@@ -72,13 +75,13 @@ data All = All
 data Any sh = Any
   deriving (Typeable, Show)
 
--- |Representation change for array element types
--- ----------------------------------------------
+-- Representation change for array element types
+-- ---------------------------------------------
 
 -- |Type representation mapping
 --
--- We represent tuples by using '()' and '(,)' as type-level nil and snoc to construct 
--- snoc-lists of types.
+-- We represent tuples by using '()' and '(,)' as type-level nil and snoc to construct snoc-lists of
+-- types.
 --
 type family EltRepr a :: *
 type instance EltRepr () = ()
@@ -660,9 +663,12 @@ type Scalar e = Array DIM0 e
 --
 type Vector e = Array DIM1 e
 
--- |Segment descriptor
+-- |Segment descriptor (vector of segment lengths)
 --
-type Segments = Vector Int
+-- To represent nested one-dimensional arrays, we use a flat array of data values in conjunction
+-- with a /segment descriptor/, which stores the lengths of the subarrays.
+--
+type Segments i = Vector i
 
 -- Shorthand for common shape types
 --
@@ -750,8 +756,8 @@ instance Shape Z where
 instance Shape sh => Shape (sh:.Int) where
   sliceAnyIndex _ = Repr.SliceAll (sliceAnyIndex (undefined :: sh))
 
--- |Slices -aka generalised indices- as n-tuples and mappings of slice
--- indicies to slices, co-slices, and slice dimensions
+-- |Slices, aka generalised indices, as /n/-tuples and mappings of slice indices to slices,
+-- co-slices, and slice dimensions
 --
 class (Elt sl, Shape (SliceShape sl), Shape (CoSliceShape sl), Shape (FullShape sl)) 
        => Slice sl where
@@ -811,7 +817,7 @@ newArray :: (Shape sh, Elt e) => sh -> (sh -> e) -> Array sh e
 newArray sh f = adata `seq` Array (fromElt sh) adata
   where 
     (adata, _) = runArrayData $ do
-                   arr <- newArrayData (1024 `max` size sh)
+                   arr <- newArrayData (size sh)
                    let write ix = writeArrayData arr (index sh ix) 
                                                      (fromElt (f ix))
                    iter sh write (>>) (return ())
@@ -823,7 +829,7 @@ allocateArray :: (Shape sh, Elt e) => sh -> Array sh e
 {-# INLINE allocateArray #-}
 allocateArray sh = adata `seq` Array (fromElt sh) adata
   where
-    (adata, _) = runArrayData $ (,undefined) `fmap` newArrayData (1024 `max` size sh)
+    (adata, _) = runArrayData $ (,undefined) `fmap` newArrayData (size sh)
 
 
 -- |Convert an 'IArray' to an accelerated array.
@@ -847,9 +853,18 @@ toIArray arr = IArray.array bnds [(ix, arr ! toElt (fromElt ix)) | ix <- IArray.
 -- |Convert a list (with elements in row-major order) to an accelerated array.
 --
 fromList :: (Shape sh, Elt e) => sh -> [e] -> Array sh e
-fromList sh l = newArray sh indexIntoList 
+{-# INLINE fromList #-}
+fromList sh xs = adata `seq` Array (fromElt sh) adata
   where
-    indexIntoList ix = l!!index sh ix
+    !n          = size sh
+    (adata, _)  = runArrayData $ do
+                    arr <- newArrayData (size sh)
+                    let go !i _ | i >= n = return ()
+                        go !i (v:vs)     = writeArrayData arr i (fromElt v) >> go (i+1) vs
+                        go _  []         = error "fromList: insufficient input data"
+                    --
+                    go 0 xs
+                    return (arr, undefined)
 
 -- |Convert an accelerated array to a list in row-major order.
 --
@@ -863,5 +878,10 @@ toList (Array sh adata) = iter sh' idx (.) id []
 --
 instance Show (Array sh e) where
   show arr@(Array sh _adata) 
-    = "Array " ++ show (toElt sh :: sh) ++ " " ++ show (toList arr)
+    = "Array (" ++ showShape (toElt sh :: sh) ++ ") " ++ show (toList arr)
+
+-- | Nicely format a shape as a string
+--
+showShape :: Shape sh => sh -> String
+showShape = foldr (\sh str -> str ++ " :. " ++ show sh) "Z" . shapeToList
 

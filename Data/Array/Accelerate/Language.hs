@@ -14,7 +14,7 @@
 -- bit manipulation) to reify such expressions.  With non-overloaded
 -- operations (such as, the logical connectives) and partially overloaded
 -- operations (such as comparisons), we use the standard operator names with a
--- '*' attached.  We keep the standard alphanumeric names as they can be
+-- \'*\' attached.  We keep the standard alphanumeric names as they can be
 -- easily qualified.
 --
 
@@ -79,7 +79,7 @@ module Data.Array.Accelerate.Language (
   (?),
   
   -- ** Array operations with a scalar result
-  (!), the, shape, size,
+  (!), the, shape, size, shapeSize,
   
   -- ** Methods of H98 classes that we need to redefine as their signatures change
   (==*), (/=*), (<*), (<=*), (>*), (>=*), max, min,
@@ -244,25 +244,27 @@ fold1 = Acc $$ Fold1
 -- |Segmented reduction along the innermost dimension.  Performs one individual reduction per
 -- segment of the source array.  These reductions proceed in parallel.
 --
--- The source array must have at least rank 1.
+-- The source array must have at least rank 1.  The 'Segments' array determines the lengths of the
+-- logical subarrays, each of which is folded seperately.
 --
-foldSeg :: (Shape ix, Elt a)
-        => (Exp a -> Exp a -> Exp a) 
-        -> Exp a 
+foldSeg :: (Shape ix, Elt a, Elt i, IsIntegral i)
+        => (Exp a -> Exp a -> Exp a)
+        -> Exp a
         -> Acc (Array (ix:.Int) a)
-        -> Acc Segments
+        -> Acc (Segments i)
         -> Acc (Array (ix:.Int) a)
 foldSeg = Acc $$$$ FoldSeg
 
 -- |Variant of 'foldSeg' that requires /all/ segments of the reduced array to be non-empty and
 -- doesn't need a default value.
 --
--- The source array must have at least rank 1.
+-- The source array must have at least rank 1. The 'Segments' array determines the lengths of the
+-- logical subarrays, each of which is folded seperately.
 --
-fold1Seg :: (Shape ix, Elt a)
-         => (Exp a -> Exp a -> Exp a) 
+fold1Seg :: (Shape ix, Elt a, Elt i, IsIntegral i)
+         => (Exp a -> Exp a -> Exp a)
          -> Acc (Array (ix:.Int) a)
-         -> Acc Segments
+         -> Acc (Segments i)
          -> Acc (Array (ix:.Int) a)
 fold1Seg = Acc $$$ Fold1Seg
 
@@ -295,7 +297,7 @@ scanl' :: Elt a
        -> (Acc (Vector a), Acc (Scalar a))
 scanl' = unpair . Acc $$$ Scanl'
 
--- |'Data.List' style left-to-right scan without an intial value (aka inclusive scan).  Again, the
+-- |'Data.List' style left-to-right scan without an initial value (aka inclusive scan).  Again, the
 -- first argument needs to be an /associative/ function.  Denotationally, we have
 --
 -- > scanl1 f e arr = crop 1 len res
@@ -318,7 +320,7 @@ scanr :: Elt a
       -> Acc (Vector a)
 scanr = Acc $$$ Scanr
 
--- |Right-to-left variant of 'scanl\''. 
+-- |Right-to-left variant of 'scanl''.
 --
 scanr' :: Elt a
        => (Exp a -> Exp a -> Exp a)
@@ -343,14 +345,14 @@ scanr1 = Acc $$ Scanr1
 -- into the result array are added to the current value using the given
 -- combination function.
 --
--- The combination function must be /associative/.  Eltents that are mapped to
+-- The combination function must be /associative/.  Elements that are mapped to
 -- the magic value 'ignore' by the permutation function are being dropped.
 --
 permute :: (Shape ix, Shape ix', Elt a)
         => (Exp a -> Exp a -> Exp a)    -- ^combination function
         -> Acc (Array ix' a)            -- ^array of default values
         -> (Exp ix -> Exp ix')          -- ^permutation
-        -> Acc (Array ix  a)            -- ^permuted array
+        -> Acc (Array ix  a)            -- ^array to be permuted
         -> Acc (Array ix' a)
 permute = Acc $$$$ Permute
 
@@ -359,7 +361,7 @@ permute = Acc $$$$ Permute
 backpermute :: (Shape ix, Shape ix', Elt a)
             => Exp ix'                  -- ^shape of the result array
             -> (Exp ix' -> Exp ix)      -- ^permutation
-            -> Acc (Array ix  a)        -- ^permuted array
+            -> Acc (Array ix  a)        -- ^source array
             -> Acc (Array ix' a)
 backpermute = Acc $$$ Backpermute
 
@@ -433,7 +435,7 @@ stencil2 = Acc $$$$$ Stencil2
 --
 -- > (acc1 >-> acc2) arrs = let tmp = acc1 arrs in acc2 tmp
 --
--- Operationally, the array computations 'acc1' and 'acc2' will not share any subcomputations,
+-- Operationally, the array computations 'acc1' and 'acc2' will not share any sub-computations,
 -- neither between each other nor with the environment.  This makes them truly independent stages
 -- that only communicate by way of the result of 'acc1' which is being fed as an argument to 'acc2'.
 --
@@ -496,14 +498,14 @@ class Lift e where
   type Plain e
 
   -- |Lift the given value into 'Exp'.  The value may already contain subexpressions in 'Exp'.
-  -- 
+  --
   lift :: e -> Exp (Plain e)
-  
+
 class Lift e => Unlift e where
 
-  -- |Unlift the outmost constructor through 'Exp'.  This is only possible if the constructor is
+  -- |Unlift the outermost constructor through 'Exp'.  This is only possible if the constructor is
   -- fully determined by its type - i.e., it is a singleton.
-  -- 
+  --
   unlift :: Exp (Plain e) -> e
 
 -- instances for indices
@@ -804,7 +806,7 @@ index0 = lift Z
 index1 :: Exp Int -> Exp (Z:. Int)
 index1 = lift . (Z:.)
 
--- |Turn an 'Int' expression into a rank-1 indexing expression.
+-- |Turn a rank-1 indexing expression into an 'Int' expression.
 --
 unindex1 :: Exp (Z:. Int) -> Exp Int
 unindex1 ix = let Z:.i = unlift ix in i
@@ -852,7 +854,13 @@ shape = Exp . Shape
 -- |Expression form that yields the size of an array.
 --
 size :: (Shape ix, Elt e) => Acc (Array ix e) -> Exp Int
-size = Exp . Size
+size = shapeSize . shape
+
+-- |The same as `size` but not operates directly on a shape without the
+--  array.
+--
+shapeSize :: Shape ix => Exp ix -> Exp Int
+shapeSize = Exp . ShapeSize
 
 
 -- Instances of all relevant H98 classes
@@ -1045,7 +1053,7 @@ not = mkLNot
 
 -- |Convert a Boolean value to an 'Int', where 'False' turns into '0' and 'True'
 -- into '1'.
--- 
+--
 boolToInt :: Exp Bool -> Exp Int
 boolToInt = mkBoolToInt
 
@@ -1062,3 +1070,4 @@ fromIntegral = mkFromIntegral
 --
 ignore :: Shape ix => Exp ix
 ignore = constant Sugar.ignore
+

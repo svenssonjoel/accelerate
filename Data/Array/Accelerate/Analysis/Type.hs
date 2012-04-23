@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 {-# LANGUAGE GADTs, TypeFamilies, PatternGuards #-}
+{-# OPTIONS_HADDOCK hide #-}
 -- |
 -- Module      : Data.Array.Accelerate.Analysis.Type
 -- Copyright   : [2009..2011] Manuel M T Chakravarty, Gabriele Keller, Sean Lee, Trevor L. McDonell
@@ -163,7 +164,7 @@ preExpType k e =
     PrimApp _ _       -> eltType (undefined::t)
     IndexScalar acc _ -> k acc
     Shape _           -> eltType (undefined::t)
-    Size _            -> eltType (undefined::t)
+    ShapeSize _       -> eltType (undefined::t)
 
 -- |Reify the result type of a tuple projection.
 --
